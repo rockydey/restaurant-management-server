@@ -25,6 +25,12 @@ async function run() {
     const foodsCollection = client.db("foodDB").collection("foods");
     const ordersCollection = client.db("foodDB").collection("orders");
 
+    app.get("/food", async (req, res) => {
+      const sort = { count: -1 };
+      const result = await foodsCollection.find().sort(sort).limit(6).toArray();
+      res.send(result);
+    });
+
     app.get("/foods", async (req, res) => {
       const result = await foodsCollection.find().toArray();
       res.send(result);
