@@ -5,7 +5,7 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(express());
+app.use(express.json());
 app.use(cors());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.omjblfo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -23,6 +23,7 @@ async function run() {
     await client.connect();
 
     const foodsCollection = client.db("foodDB").collection("foods");
+    const ordersCollection = client.db("foodDB").collection("orders");
 
     app.get("/foods", async (req, res) => {
       const result = await foodsCollection.find().toArray();
@@ -33,6 +34,12 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await foodsCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.post("/orders", async (req, res) => {
+      const order = req.body;
+      const result = await ordersCollection.insertOne(order);
       res.send(result);
     });
 
