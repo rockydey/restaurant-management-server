@@ -32,7 +32,15 @@ async function run() {
     });
 
     app.get("/foods", async (req, res) => {
-      const result = await foodsCollection.find().toArray();
+      console.log("Pagination", req.query);
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      const skipPage = size * page;
+      const result = await foodsCollection
+        .find()
+        .skip(skipPage)
+        .limit(size)
+        .toArray();
       res.send(result);
     });
 
@@ -60,6 +68,11 @@ async function run() {
         options
       );
       res.send(result);
+    });
+
+    app.get("/foodsCount", async (req, res) => {
+      const count = await foodsCollection.estimatedDocumentCount();
+      res.send({ count });
     });
 
     app.post("/orders", async (req, res) => {
