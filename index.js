@@ -37,6 +37,25 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/foods/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const value = req.body;
+      const updateValue = {
+        $set: {
+          quantity: value.quantity,
+          count: value.count,
+        },
+      };
+      const result = await foodsCollection.updateOne(
+        query,
+        updateValue,
+        options
+      );
+      res.send(result);
+    });
+
     app.post("/orders", async (req, res) => {
       const order = req.body;
       const result = await ordersCollection.insertOne(order);
