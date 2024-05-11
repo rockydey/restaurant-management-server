@@ -70,6 +70,14 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/searchFoods", async (req, res) => {
+      const searchText = req.query.search;
+      console.log(searchText);
+      const query = { food_name: { $regex: new RegExp(searchText, "i") } };
+      const result = await foodsCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.get("/foodsCount", async (req, res) => {
       const count = await foodsCollection.estimatedDocumentCount();
       res.send({ count });
