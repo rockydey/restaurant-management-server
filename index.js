@@ -24,6 +24,7 @@ async function run() {
 
     const foodsCollection = client.db("foodDB").collection("foods");
     const ordersCollection = client.db("foodDB").collection("orders");
+    const feedbacksCollection = client.db("foodDB").collection("feedbacks");
 
     app.get("/food", async (req, res) => {
       const sort = { count: -1 };
@@ -86,6 +87,17 @@ async function run() {
     app.post("/orders", async (req, res) => {
       const order = req.body;
       const result = await ordersCollection.insertOne(order);
+      res.send(result);
+    });
+
+    app.get("/feedbacks", async (req, res) => {
+      const result = await feedbacksCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/feedbacks", async (req, res) => {
+      const feedback = req.body;
+      const result = await feedbacksCollection.insertOne(feedback);
       res.send(result);
     });
 
