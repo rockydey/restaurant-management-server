@@ -77,6 +77,30 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/updateFood/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const userValue = req.body;
+      const options = { upsert: true };
+      const userUpdateValue = {
+        $set: {
+          food_name: userValue.food_name,
+          food_category: userValue.food_category,
+          price: userValue.price,
+          quantity: userValue.quantity,
+          origin: userValue.origin,
+          description: userValue.description,
+          food_image: userValue.food_image,
+        },
+      };
+      const result = await foodsCollection.updateOne(
+        query,
+        userUpdateValue,
+        options
+      );
+      res.send(result);
+    });
+
     app.get("/myFoods", async (req, res) => {
       const email = req.query.email;
       const query = { user_email: email };
