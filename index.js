@@ -33,7 +33,6 @@ async function run() {
     });
 
     app.get("/foods", async (req, res) => {
-      console.log("Pagination", req.query);
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
       const skipPage = size * page;
@@ -120,9 +119,23 @@ async function run() {
       res.send({ count });
     });
 
+    app.get("/orders", async (req, res) => {
+      const email = req.query.email;
+      const query = { user_email: email };
+      const result = await ordersCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.post("/orders", async (req, res) => {
       const order = req.body;
       const result = await ordersCollection.insertOne(order);
+      res.send(result);
+    });
+
+    app.delete("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await ordersCollection.deleteOne(query);
       res.send(result);
     });
 
