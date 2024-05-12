@@ -71,6 +71,12 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/foods", async (req, res) => {
+      const food = req.body;
+      const result = await foodsCollection.insertOne(food);
+      res.send(result);
+    });
+
     app.get("/searchFoods", async (req, res) => {
       const searchText = req.query.search;
       console.log(searchText);
