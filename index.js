@@ -2,11 +2,20 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const app = express();
 const port = process.env.PORT || 5000;
 
+// Build in middlewares
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  })
+);
+app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.omjblfo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -18,6 +27,26 @@ const client = new MongoClient(uri, {
   },
 });
 
+// Custom middlewares
+const logger = (req, res, next) => {
+  console.log("From logger", req.method, req.url);
+  next();
+};
+
+const verifyToken = (req, res, next) => {
+  const token = req.cookies?.token;
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unauthorized access" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
+
 async function run() {
   try {
     await client.connect();
@@ -26,6 +55,27 @@ async function run() {
     const ordersCollection = client.db("foodDB").collection("orders");
     const feedbacksCollection = client.db("foodDB").collection("feedbacks");
 
+    // Auth related api
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+        })
+        .send({ success: true });
+    });
+
+    app.post("/logout", async (req, res) => {
+      const user = req.body;
+      res.clearCookie("token", { maxAge: 0 }).send({ success: true });
+    });
+
+    // Foods related api
     app.get("/food", async (req, res) => {
       const sort = { count: -1 };
       const result = await foodsCollection.find().sort(sort).limit(6).toArray();
@@ -100,8 +150,11 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/myFoods", async (req, res) => {
+    app.get("/myFoods", verifyToken, logger, async (req, res) => {
       const email = req.query.email;
+      if (req.user.email !== email) {
+        return res.status(403).send({ message: "forbidden" });
+      }
       const query = { user_email: email };
       const result = await foodsCollection.find(query).toArray();
       res.send(result);
@@ -119,8 +172,11 @@ async function run() {
       res.send({ count });
     });
 
-    app.get("/orders", async (req, res) => {
+    app.get("/orders", verifyToken, logger, async (req, res) => {
       const email = req.query.email;
+      if (req.user.email !== email) {
+        return res.status(403).send({ message: "forbidden" });
+      }
       const query = { user_email: email };
       const result = await ordersCollection.find(query).toArray();
       res.send(result);
