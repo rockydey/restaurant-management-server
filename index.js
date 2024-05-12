@@ -54,6 +54,7 @@ async function run() {
     const foodsCollection = client.db("foodDB").collection("foods");
     const ordersCollection = client.db("foodDB").collection("orders");
     const feedbacksCollection = client.db("foodDB").collection("feedbacks");
+    const usersCollection = client.db("foodDB").collection("users");
 
     // Auth related api
     app.post("/jwt", async (req, res) => {
@@ -76,6 +77,17 @@ async function run() {
     });
 
     // Foods related api
+    app.get("/user", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/user", async (req, res) => {
+      const user = req.body;
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
     app.get("/food", async (req, res) => {
       const sort = { count: -1 };
       const result = await foodsCollection.find().sort(sort).limit(6).toArray();
