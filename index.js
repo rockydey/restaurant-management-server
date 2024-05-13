@@ -11,7 +11,11 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://taste-treat-restaurant-auth.web.app",
+      "https://taste-treat-restaurant-auth.firebaseapp.com",
+    ],
     credentials: true,
   })
 );
@@ -49,12 +53,18 @@ const verifyToken = (req, res, next) => {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
 
     const foodsCollection = client.db("foodDB").collection("foods");
     const ordersCollection = client.db("foodDB").collection("orders");
     const feedbacksCollection = client.db("foodDB").collection("feedbacks");
     const usersCollection = client.db("foodDB").collection("users");
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    };
 
     // Auth related api
     app.post("/jwt", async (req, res) => {
@@ -62,18 +72,14 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "1h",
       });
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "none",
-        })
-        .send({ success: true });
+      res.cookie("token", token, cookieOptions).send({ success: true });
     });
 
     app.post("/logout", async (req, res) => {
       const user = req.body;
-      res.clearCookie("token", { maxAge: 0 }).send({ success: true });
+      res
+        .clearCookie("token", { ...cookieOptions, maxAge: 0 })
+        .send({ success: true });
     });
 
     // Foods related api
@@ -218,7 +224,7 @@ async function run() {
       res.send(result);
     });
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
